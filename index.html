@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Vase Emergency: Friendslop</title>
+<style>
+  :root{--ink:#24223a;--cream:#fff7e8;--pink:#ff6b8a;--blue:#5b9dff;--mint:#75dfb3;--gold:#ffd45e}
+  *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#201f38;color:var(--ink);font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif}
+  body{display:grid;place-items:center;padding:12px}
+  #game{position:relative;width:min(1100px,100vw - 24px);aspect-ratio:11/7;max-height:calc(100vh - 24px);border:4px solid #fff7e8;border-radius:20px;overflow:hidden;box-shadow:0 18px 70px #09081799;background:#efe4d0}
+  canvas{display:block;width:100%;height:100%;touch-action:none}
+  .hud{position:absolute;inset:0;pointer-events:none}
+  .topbar{position:absolute;left:16px;right:16px;top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand,.score,.controls,.playercard{background:#fff8e9eF;border:2px solid #3b3553;border-radius:14px;box-shadow:0 4px 0 #3b3553;padding:8px 12px;font-weight:900}
+  .brand{font-size:clamp(12px,2vw,17px);letter-spacing:.06em}.brand small{color:#ea5473}
+  .score{display:flex;align-items:center;gap:9px;font-size:clamp(12px,1.8vw,17px)}
+  .bar{width:clamp(90px,20vw,210px);height:14px;background:#d5c6b1;border:2px solid #3b3553;border-radius:20px;overflow:hidden}
+  #progress{height:100%;width:0%;background:linear-gradient(90deg,#ff9c6b,#ffd45e,#75dfb3);transition:width .2s}
+  .bottom{position:absolute;left:16px;right:16px;bottom:13px;display:flex;justify-content:space-between;align-items:end;gap:10px}
+  .controls{font-size:11px;line-height:1.45;max-width:56%;padding:7px 10px}
+  .players{display:flex;gap:8px}.playercard{font-size:11px;min-width:105px;padding:7px 10px}.playercard b{display:block;font-size:13px}.carry{color:#6b568d}
+  #toast{position:absolute;left:50%;top:22%;transform:translate(-50%,-50%) scale(.8);font-weight:1000;font-size:clamp(18px,4vw,36px);color:#fff;text-shadow:0 3px 0 #3b3553,2px 0 #3b3553,-2px 0 #3b3553;opacity:0;transition:opacity .15s,transform .15s;white-space:nowrap}
+  #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .overlay{position:absolute;inset:0;display:grid;place-items:center;background:#211e38a8;backdrop-filter:blur(3px);pointer-events:auto}
+  .panel{width:min(520px,90%);padding:24px 26px;background:var(--cream);border:4px solid #3b3553;border-radius:22px;box-shadow:0 9px 0 #3b3553;text-align:center}
+  .panel h1{font-size:clamp(27px,6vw,48px);line-height:.97;margin:0 0 10px;color:#ea5473;text-shadow:2px 2px 0 #ffd45e}
+  .panel p{font-weight:700;line-height:1.45;margin:10px 0 18px}
+  .panel .hint{font-size:12px;color:#655d72}
+  button{font:900 18px inherit;background:#75dfb3;color:#24223a;border:3px solid #3b3553;border-radius:14px;padding:12px 24px;box-shadow:0 5px 0 #3b3553;cursor:pointer}
+  button:active{transform:translateY(4px);box-shadow:0 1px 0 #3b3553}
+  @media(max-width:600px){#game{border-width:2px;border-radius:12px}.topbar{left:7px;right:7px;top:7px}.bottom{left:7px;right:7px;bottom:7px}.brand,.score{padding:6px 7px}.controls{font-size:9px;max-width:48%;padding:5px}.players{gap:4px}.playercard{min-width:80px;font-size:9px;padding:5px}.playercard b{font-size:11px}}
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="c" width="1100" height="700" aria-label="Vase Emergency game"></canvas>
+  <div class="hud">
+    <div class="topbar"><div class="brand">🫙 VASE EMERGENCY <small>// FRIENDSLOP</small></div><div class="score"><span id="score">0</span><span>/ 1,000 glued</span><div class="bar"><div id="progress"></div></div></div></div>
+    <div id="toast"></div>
+    <div class="bottom"><div class="controls"><b>PLAYER 1</b> WASD move · hold E to scoop / glue<br><b>PLAYER 2</b> ←↑↓→ move · hold ENTER to scoop / glue<br>Grab shards from rubble piles, then bring them to the workbench. Bumping your pal makes you spill!</div><div class="players"><div class="playercard" style="border-color:#e65376"><b>🩷 P1 <span class="carry" id="carry1">0</span></b><span>shards in your arms</span></div><div class="playercard" style="border-color:#4385ec"><b>💙 P2 <span class="carry" id="carry2">0</span></b><span>shards in your arms</span></div></div></div>
+  </div>
+  <div class="overlay" id="overlay"><div class="panel"><h1>VASE<br>EMERGENCY!</h1><p>Your extremely expensive vase exploded into <b>1,000 pieces</b>.<br>Work together to pick up the shards and glue it back together. Try not to body-check each other.</p><p class="hint">Two-player local co-op. Player 2 is optional, so you can also play solo.</p><button id="start">START THE REPAIR</button></div></div>
+</div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const W=1100,H=700, cx=550,cy=350, stationR=91;
+const scoreEl=document.getElementById('score'),barEl=document.getElementById('progress'),c1=document.getElementById('carry1'),c2=document.getElementById('carry2'),toastEl=document.getElementById('toast');
+const keys=new Set(); let running=false,won=false,last=0,delivered=0,ground=[],players=[],effects=[],toastTime=0,shake=0;
+const colors=['#84c9d9','#f6d17a','#e68791','#a58bd6','#f5efe1','#5b9dff','#ff9274'];
+const piles=[ [135,145],[330,125],[550,115],[770,130],[970,155],[145,535],[345,575],[555,570],[770,565],[965,530] ];
+function rand(min,max){return min+Math.random()*(max-min)}
+function makePiece(x,y){const a=rand(0,Math.PI*2),r=rand(3,12);return {x,y,rot:rand(0,6.28),s:rand(3,7),color:colors[Math.floor(Math.random()*colors.length)],vx:Math.cos(a)*r,vy:Math.sin(a)*r,spin:rand(-2,2)}}
+function reset(){delivered=0;ground=[];effects=[];won=false;players=[
+ {id:1,x:cx-32,y:cy+118,color:'#ff6b8a',outline:'#a92e58',keys:['KeyA','KeyD','KeyW','KeyS'],action:'KeyE',carry:0,glue:0,flash:0},
+ {id:2,x:cx+32,y:cy+118,color:'#5b9dff',outline:'#2f56aa',keys:['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'],action:'Enter',carry:0,glue:0,flash:0}
+];
+ for(const [px,py] of piles){for(let i=0;i<100;i++){const a=Math.random()*6.283,r=Math.sqrt(Math.random())*52;ground.push(makePiece(px+Math.cos(a)*r,py+Math.sin(a)*r))}}
+ updateHud(); draw();
+}
+function updateHud(){scoreEl.textContent=delivered.toLocaleString();barEl.style.width=(delivered/10)+'%';c1.textContent=players[0]?.carry||0;c2.textContent=players[1]?.carry||0}
+function showToast(text){toastEl.textContent=text;toastEl.classList.add('show');toastTime=1.25}
+function pathVase(){ctx.beginPath();ctx.moveTo(cx-17,cy-52);ctx.quadraticCurveTo(cx-14,cy-38,cx-27,cy-28);ctx.lineTo(cx-40,cy+34);ctx.quadraticCurveTo(cx-44,cy+53,cx-25,cy+58);ctx.quadraticCurveTo(cx,cy+64,cx+25,cy+58);ctx.quadraticCurveTo(cx+44,cy+53,cx+40,cy+34);ctx.lineTo(cx+27,cy-28);ctx.quadraticCurveTo(cx+14,cy-38,cx+17,cy-52);ctx.closePath()}
+// Exactly 1,000 little ceramic shards, packed into a jittered mosaic inside the vase.
+const vaseTiles=[];{
+ let seed=72191;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ for(let row=0;row<40;row++){
+  const y=cy-50+(row+.5)*2.65, localY=y-cy;
+  const half=localY < -28 ? 17+(localY+52)*(10/24) : localY < 34 ? 27+(localY+28)*(13/62) : 40-(localY-34)*(15/24);
+  const cellW=(2*half)/25;
+  for(let col=0;col<25;col++)vaseTiles.push({x:cx-half+(col+.5)*cellW+(rnd()-.5)*cellW*.18,y:y+(rnd()-.5)*1.2,w:cellW*.94,h:2.5+rnd()*.12,color:colors[Math.floor(rnd()*colors.length)],j:rnd()*.1});
+ }
+}
+function drawBackground(){
+ ctx.fillStyle='#ede0cb';ctx.fillRect(0,0,W,H);
+ // parquet floor
+ for(let y=0;y<H;y+=56){for(let x=0;x<W;x+=110){const alt=((x/110+y/56)|0)%2;ctx.fillStyle=alt?'#f0e5d3':'#e9ddc8';ctx.fillRect(x+2,y+2,106,52);ctx.strokeStyle='#e1d2bb';ctx.lineWidth=1;ctx.strokeRect(x+2,y+2,106,52)}}
+ // taped work area
+ ctx.save();ctx.setLineDash([9,9]);ctx.lineWidth=4;ctx.strokeStyle='#b9a88f';ctx.beginPath();ctx.roundRect(30,68,W-60,H-136,28);ctx.stroke();ctx.restore();
+ // little rug under the repair station
+ ctx.fillStyle='#b8e5d5';ctx.beginPath();ctx.ellipse(cx,cy,144,120,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#6aaf9b';ctx.lineWidth=4;ctx.setLineDash([7,7]);ctx.stroke();ctx.setLineDash([]);
+}
+function drawStation(){
+ // table shadow + tabletop
+ ctx.fillStyle='#66536c33';ctx.beginPath();ctx.ellipse(cx+7,cy+17,111,89,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#bd8e68';ctx.beginPath();ctx.ellipse(cx,cy+8,109,86,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#684d55';ctx.lineWidth=5;ctx.stroke();
+ ctx.fillStyle='#f4d9aa';ctx.beginPath();ctx.ellipse(cx,cy,102,79,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff2d0';ctx.lineWidth=4;ctx.stroke();
+ // glue tube and label
+ ctx.save();ctx.translate(cx+67,cy-49);ctx.rotate(-.65);ctx.fillStyle='#fff7ec';ctx.strokeStyle='#574961';ctx.lineWidth=2.5;ctx.beginPath();ctx.roundRect(-8,-20,16,39,4);ctx.fill();ctx.stroke();ctx.fillStyle='#75dfb3';ctx.fillRect(-7,-4,14,8);ctx.fillStyle='#f5cf56';ctx.beginPath();ctx.moveTo(-5,-20);ctx.lineTo(5,-20);ctx.lineTo(2,-29);ctx.lineTo(-2,-29);ctx.closePath();ctx.fill();ctx.restore();
+ // vase base silhouette
+ pathVase();ctx.fillStyle='#faf1dc';ctx.fill();ctx.strokeStyle='#40384f';ctx.lineWidth=4;ctx.stroke();
+ // glued shards appear inside vase
+ ctx.save();pathVase();ctx.clip();
+ for(let i=0;i<Math.min(delivered,vaseTiles.length);i++){const t=vaseTiles[i],w=t.w,h=t.h;ctx.fillStyle=t.color;ctx.beginPath();ctx.moveTo(t.x-w*.49,t.y-h*.43);ctx.lineTo(t.x+w*(.22+t.j),t.y-h*.48);ctx.lineTo(t.x+w*.49,t.y+h*.17);ctx.lineTo(t.x-w*.08,t.y+h*.49);ctx.lineTo(t.x-w*.47,t.y+h*.12);ctx.closePath();ctx.fill()}
+ // subtle crack lines on unfinished parts
+ ctx.globalAlpha=.16;ctx.strokeStyle='#41394e';ctx.lineWidth=1;for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(cx-28+i*8,cy-20);ctx.lineTo(cx-32+i*9,cy+39);ctx.stroke()}ctx.restore();
+ pathVase();ctx.strokeStyle='#40384f';ctx.lineWidth=4;ctx.stroke();
+ // neck rim
+ ctx.fillStyle='#f7ead0';ctx.beginPath();ctx.ellipse(cx,cy-51,19,5,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#40384f';ctx.lineWidth=3;ctx.stroke();
+ ctx.fillStyle='#473d55';ctx.font='900 12px system-ui';ctx.textAlign='center';ctx.fillText('GLUE ZONE',cx,cy+96);
+}
+function drawPiece(p){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.color;ctx.strokeStyle='#51475c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-p.s,-p.s*.55);ctx.lineTo(p.s*1.25,-p.s*.2);ctx.lineTo(p.s*.15,p.s*1.15);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
+function drawPlayer(p){
+ // carried shard orbit
+ if(p.carry>0){const n=Math.min(8,Math.ceil(p.carry/8));for(let i=0;i<n;i++){const a=(performance.now()/550)+i*Math.PI*2/n;ctx.fillStyle=colors[(i+p.id)%colors.length];ctx.beginPath();ctx.arc(p.x+Math.cos(a)*19,p.y-18+Math.sin(a)*8,3.2,0,Math.PI*2);ctx.fill()}}
+ // body shadow
+ ctx.fillStyle='#332b4830';ctx.beginPath();ctx.ellipse(p.x+2,p.y+13,18,8,0,0,Math.PI*2);ctx.fill();
+ // arms
+ ctx.strokeStyle=p.outline;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-11,p.y+1);ctx.lineTo(p.x-18,p.y+7);ctx.moveTo(p.x+11,p.y+1);ctx.lineTo(p.x+18,p.y+7);ctx.stroke();
+ ctx.fillStyle=p.color;ctx.strokeStyle=p.outline;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(p.x-14,p.y-15,28,30,10);ctx.fill();ctx.stroke();
+ // eyes look toward center or movement
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(p.x-5,p.y-5,4,5,0,0,Math.PI*2);ctx.ellipse(p.x+5,p.y-5,4,5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#302a43';ctx.beginPath();ctx.arc(p.x-4,p.y-4,1.7,0,Math.PI*2);ctx.arc(p.x+6,p.y-4,1.7,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='#302a43';ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(p.x,p.y+1,4,0.2,Math.PI-.2);ctx.stroke();
+ ctx.fillStyle='#40384f';ctx.font='900 9px system-ui';ctx.textAlign='center';ctx.fillText('P'+p.id,p.x,p.y+27);
+ if(keys.has(p.action)&&running){ctx.strokeStyle='#ffffffaa';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.stroke()}
+}
+function draw(){
+ ctx.save();if(shake>0){ctx.translate(rand(-shake,shake),rand(-shake,shake))}drawBackground();
+ // piles outlined in soft circles, with counts
+ for(const [px,py] of piles){let count=0;for(const q of ground){if((q.x-px)**2+(q.y-py)**2<65**2)count++}if(count){ctx.fillStyle='#ffffff35';ctx.beginPath();ctx.arc(px,py,56,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff7e899';ctx.lineWidth=2;ctx.setLineDash([3,5]);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#51475c';ctx.font='900 10px system-ui';ctx.textAlign='center';ctx.fillText('RUBBLE ×'+count,px,py+66)}}
+ for(const q of ground)drawPiece(q);
+ drawStation();for(const e of effects){ctx.globalAlpha=Math.max(0,e.life);ctx.fillStyle=e.color;ctx.font=`1000 ${e.size}px system-ui`;ctx.textAlign='center';ctx.fillText(e.text,e.x,e.y);ctx.globalAlpha=1}
+ for(const p of players)drawPlayer(p);
+ ctx.restore();
+}
+function movePlayer(p,dt){let dx=0,dy=0;const [left,right,up,down]=p.keys;if(keys.has(left))dx--;if(keys.has(right))dx++;if(keys.has(up))dy--;if(keys.has(down))dy++;if(dx&&dy){dx*=.7071;dy*=.7071}const speed=238;p.x=Math.max(45,Math.min(W-45,p.x+dx*speed*dt));p.y=Math.max(86,Math.min(H-63,p.y+dy*speed*dt));}
+function collect(p,dt){if(!keys.has(p.action)){p.glue=0;return}const d=Math.hypot(p.x-cx,p.y-cy);if(d<stationR+16){if(p.carry>0){p.glue+=dt;if(p.glue>.62){const n=Math.min(p.carry,1000-delivered);if(n>0){delivered+=n;p.carry-=n;effects.push({x:cx,y:cy-75,text:'+'+n+' GLUED!',color:'#df596f',size:27,life:1});showToast(n>=100?'THE VASE IS GETTING LESS BAD!':'NICE, MORE VASE!');shake=5;updateHud();if(delivered>=1000){won=true;running=false;document.getElementById('overlay').innerHTML='<div class="panel"><h1>VASE<br>RESTORED!</h1><p>You glued all <b>1,000 pieces</b> back together.<br>Your friendship survived the incident. Mostly.</p><button id="again">PLAY AGAIN</button></div>';document.getElementById('overlay').style.display='grid';document.getElementById('again').onclick=startGame;}}p.glue=0}}return}
+ p.glue=0;if(p.carry>=250)return;let grabbed=0;const radius=66;for(let i=ground.length-1;i>=0&&p.carry<250;i--){const q=ground[i];if((q.x-p.x)**2+(q.y-p.y)**2<radius*radius){ground.splice(i,1);p.carry++;grabbed++;if(p.carry>=250)break}}
+ if(grabbed){effects.push({x:p.x,y:p.y-28,text:'+'+grabbed,color:'#51475c',size:13,life:.35});updateHud()}
+}
+let bumpCD=0;
+function collisions(dt){bumpCD-=dt;const a=players[0],b=players[1],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<31&&d>0){const push=(31-d)/2;a.x-=dx/d*push;b.x+=dx/d*push;if(bumpCD<=0){bumpCD=1.15;const spillA=Math.min(a.carry,Math.ceil(Math.random()*5)),spillB=Math.min(b.carry,Math.ceil(Math.random()*5));for(let i=0;i<spillA;i++){ground.push(makePiece(a.x+rand(-16,16),a.y+rand(-16,16)));a.carry--}for(let i=0;i<spillB;i++){ground.push(makePiece(b.x+rand(-16,16),b.y+rand(-16,16)));b.carry--}effects.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2-30,text:'FRIENDSHIP IMPACT!',color:'#ea5473',size:19,life:.8});shake=4;updateHud()}}}
+function frame(t){if(!running)return;const dt=Math.min(.04,(t-last)/1000||0);last=t;for(const p of players){movePlayer(p,dt);collect(p,dt)}collisions(dt);for(const e of effects)e.life-=dt;effects=effects.filter(e=>e.life>0);if(toastTime>0){toastTime-=dt;if(toastTime<=0)toastEl.classList.remove('show')}shake=Math.max(0,shake-dt*18);draw();requestAnimationFrame(frame)}
+function startGame(){document.getElementById('overlay').style.display='none';reset();running=true;last=performance.now();requestAnimationFrame(frame)}
+document.getElementById('start').onclick=startGame;
+window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(!running&&e.code==='Space'&&!won)startGame()});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>keys.clear());
+// Keep the drawing crisp while the canvas scales to the chat/device viewport.
+function fit(){const box=document.getElementById('game').getBoundingClientRect();const dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr);ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);if(!running)draw()}
+window.addEventListener('resize',fit);fit();reset();
+})();
+</script>
+</body>
+</html>
