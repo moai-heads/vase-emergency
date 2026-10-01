@@ -12,6 +12,7 @@ Open the [GitHub Pages game](https://moai-heads.github.io/vase-emergency/) or se
 - **Left click** — pick up / drop a shard
 - **Hold right click + mouse** — rotate the held shard in pitch and yaw
 - **Z / C** — roll the held shard
+- **Q** — snap upright while keeping the shard’s current heading
 - **Shift + hold right click + mouse** — move the held shard sideways / up and down
 - **Mouse wheel** — move the shard farther away or closer
 - **E** — fuse only when a real neighboring broken edge fits
