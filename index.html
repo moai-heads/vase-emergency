@@ -1,144 +1,321 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Vase Emergency: Friendslop</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#171925"><title>Vase Emergency — Shardstorm</title>
 <style>
-  :root{--ink:#24223a;--cream:#fff7e8;--pink:#ff6b8a;--blue:#5b9dff;--mint:#75dfb3;--gold:#ffd45e}
-  *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#201f38;color:var(--ink);font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif}
-  body{display:grid;place-items:center;padding:12px}
-  #game{position:relative;width:min(1100px,100vw - 24px);aspect-ratio:11/7;max-height:calc(100vh - 24px);border:4px solid #fff7e8;border-radius:20px;overflow:hidden;box-shadow:0 18px 70px #09081799;background:#efe4d0}
-  canvas{display:block;width:100%;height:100%;touch-action:none}
-  .hud{position:absolute;inset:0;pointer-events:none}
-  .topbar{position:absolute;left:16px;right:16px;top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .brand,.score,.controls,.playercard{background:#fff8e9eF;border:2px solid #3b3553;border-radius:14px;box-shadow:0 4px 0 #3b3553;padding:8px 12px;font-weight:900}
-  .brand{font-size:clamp(12px,2vw,17px);letter-spacing:.06em}.brand small{color:#ea5473}
-  .score{display:flex;align-items:center;gap:9px;font-size:clamp(12px,1.8vw,17px)}
-  .bar{width:clamp(90px,20vw,210px);height:14px;background:#d5c6b1;border:2px solid #3b3553;border-radius:20px;overflow:hidden}
-  #progress{height:100%;width:0%;background:linear-gradient(90deg,#ff9c6b,#ffd45e,#75dfb3);transition:width .2s}
-  .bottom{position:absolute;left:16px;right:16px;bottom:13px;display:flex;justify-content:space-between;align-items:end;gap:10px}
-  .controls{font-size:11px;line-height:1.45;max-width:56%;padding:7px 10px}
-  .players{display:flex;gap:8px}.playercard{font-size:11px;min-width:105px;padding:7px 10px}.playercard b{display:block;font-size:13px}.carry{color:#6b568d}
-  #toast{position:absolute;left:50%;top:22%;transform:translate(-50%,-50%) scale(.8);font-weight:1000;font-size:clamp(18px,4vw,36px);color:#fff;text-shadow:0 3px 0 #3b3553,2px 0 #3b3553,-2px 0 #3b3553;opacity:0;transition:opacity .15s,transform .15s;white-space:nowrap}
-  #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  .overlay{position:absolute;inset:0;display:grid;place-items:center;background:#211e38a8;backdrop-filter:blur(3px);pointer-events:auto}
-  .panel{width:min(520px,90%);padding:24px 26px;background:var(--cream);border:4px solid #3b3553;border-radius:22px;box-shadow:0 9px 0 #3b3553;text-align:center}
-  .panel h1{font-size:clamp(27px,6vw,48px);line-height:.97;margin:0 0 10px;color:#ea5473;text-shadow:2px 2px 0 #ffd45e}
-  .panel p{font-weight:700;line-height:1.45;margin:10px 0 18px}
-  .panel .hint{font-size:12px;color:#655d72}
-  button{font:900 18px inherit;background:#75dfb3;color:#24223a;border:3px solid #3b3553;border-radius:14px;padding:12px 24px;box-shadow:0 5px 0 #3b3553;cursor:pointer}
-  button:active{transform:translateY(4px);box-shadow:0 1px 0 #3b3553}
-  @media(max-width:600px){#game{border-width:2px;border-radius:12px}.topbar{left:7px;right:7px;top:7px}.bottom{left:7px;right:7px;bottom:7px}.brand,.score{padding:6px 7px}.controls{font-size:9px;max-width:48%;padding:5px}.players{gap:4px}.playercard{min-width:80px;font-size:9px;padding:5px}.playercard b{font-size:11px}}
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root{--bg:#171925;--panel:#232638;--line:#44475e;--ink:#f5f0df;--muted:#a6a6b7;--coral:#ff786d;--gold:#f2c46d;--mint:#8fe0c0;--blue:#88bfe8}
+*{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif}button{font:inherit;color:inherit}#app{position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(ellipse at 52% 35%,#303145 0,#1d2030 52%,#141620 100%)}canvas#view{display:block;width:100%;height:100%;touch-action:none;outline:0}
+#vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#10121c88,transparent 20%,transparent 75%,#10121c99)}
+header{position:absolute;left:22px;right:22px;top:17px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:12px}
+.brand{display:flex;gap:11px;align-items:center}.brandIcon{width:42px;height:42px;border:1px solid #ffffff36;border-radius:13px;background:#f2c46d19;display:grid;place-items:center;font-size:23px;box-shadow:inset 0 0 18px #f2c46d12}.brand h1{font-size:14px;letter-spacing:.12em;margin:0;font-weight:700}.brand .sub{font:10px 'DM Mono',monospace;letter-spacing:.14em;color:var(--muted);margin-top:4px}
+.pill{border:1px solid #ffffff26;background:#1a1c29df;backdrop-filter:blur(8px);border-radius:12px;padding:9px 13px;box-shadow:0 6px 22px #0003}.stats{display:flex;gap:8px;pointer-events:auto}.stat{min-width:110px}.stat label{display:block;font:9px 'DM Mono',monospace;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}.stat strong{font:600 16px 'DM Mono',monospace;display:block;margin-top:3px}.progressTrack{height:4px;background:#45475a;border-radius:8px;overflow:hidden;margin-top:6px}.progressFill{height:100%;width:0;background:linear-gradient(90deg,var(--coral),var(--gold),var(--mint));transition:width .22s}
+.actions{position:absolute;right:22px;top:91px;display:flex;gap:7px;pointer-events:auto}.smallbtn{border:1px solid #ffffff26;background:#1a1c29d9;padding:8px 11px;border-radius:10px;font:10px 'DM Mono',monospace;letter-spacing:.04em;cursor:pointer;transition:.15s}.smallbtn:hover{border-color:#f2c46d99;color:var(--gold);transform:translateY(-1px)}
+#bottom{position:absolute;left:22px;right:22px;bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;pointer-events:none}.instructions{font:10px 'DM Mono',monospace;line-height:1.7;letter-spacing:.01em;color:#d3d0d6;background:#191b28d9;border:1px solid #ffffff1d;border-radius:11px;padding:8px 12px;backdrop-filter:blur(6px)}.instructions b{color:var(--gold);font-weight:500}.modeHud{font:10px 'DM Mono',monospace;color:#c8c5d1;text-align:right}.modeHud strong{display:block;color:var(--mint);font-size:12px;margin-bottom:4px;letter-spacing:.06em}
+#toast{position:absolute;top:25%;left:50%;transform:translate(-50%,-10px) scale(.92);opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;color:#fff7e3;font:700 clamp(17px,3vw,28px) 'Space Grotesk',sans-serif;text-shadow:0 3px 18px #0009;white-space:nowrap;letter-spacing:.03em}#toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#11131dc9;backdrop-filter:blur(8px);z-index:5;padding:18px}.panel{width:min(570px,95vw);border:1px solid #ffffff28;border-radius:22px;background:linear-gradient(145deg,#292c40,#1e2130);box-shadow:0 28px 100px #0009,inset 0 1px #ffffff17;padding:28px 31px;text-align:center}.eyebrow{font:10px 'DM Mono',monospace;color:var(--mint);letter-spacing:.22em;text-transform:uppercase}.panel h2{font-size:clamp(34px,8vw,62px);line-height:.94;letter-spacing:-.06em;margin:12px 0 12px}.panel h2 em{color:var(--coral);font-style:normal}.panel p{max-width:445px;margin:0 auto;color:#cfced8;line-height:1.6;font-size:14px}.modes{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin:21px 0 15px}.mode{border:1px solid #ffffff24;border-radius:10px;background:#171a27;padding:9px 4px;cursor:pointer;transition:.14s}.mode strong{display:block;font:600 15px 'DM Mono',monospace}.mode span{font:8px 'DM Mono',monospace;color:#9e9eaf}.mode:hover{border-color:#f2c46d99}.mode.active{background:#f2c46d18;border-color:var(--gold);color:var(--gold);box-shadow:0 0 18px #f2c46d17}
+.primary{border:0;border-radius:12px;padding:13px 20px;background:var(--coral);color:#211c25;font-weight:700;cursor:pointer;box-shadow:0 5px 0 #a84948;transition:.12s;width:100%;font-size:15px}.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}.primary:active{transform:translateY(3px);box-shadow:0 2px 0 #a84948}.fine{font:9px 'DM Mono',monospace;color:#9698ab;margin-top:13px;line-height:1.6}
+#winPanel{display:none}.winIcon{font-size:43px;margin:2px}.winStats{display:flex;justify-content:center;gap:10px;margin:15px 0 20px}.winStats div{background:#171a27;border:1px solid #ffffff17;border-radius:10px;padding:9px 15px;font:10px 'DM Mono',monospace;color:#a9a9b9}.winStats b{display:block;color:var(--gold);font-size:17px;margin-bottom:3px}
+#flash{position:absolute;inset:0;pointer-events:none;background:#fff5db;opacity:0;z-index:3}
+@media(max-width:650px){header{left:10px;right:10px;top:10px}.brandIcon{width:34px;height:34px}.brand h1{font-size:11px}.brand .sub{font-size:8px}.stats{gap:5px}.pill{padding:7px 8px}.stat{min-width:76px}.stat strong{font-size:13px}.stat label{font-size:8px}.actions{right:10px;top:65px}.smallbtn{font-size:9px;padding:7px 8px}#bottom{left:10px;right:10px;bottom:9px;align-items:flex-end}.instructions{font-size:8px;line-height:1.55;padding:6px 8px}.modeHud{font-size:8px}.modeHud strong{font-size:9px}.modes{grid-template-columns:repeat(3,1fr)}.panel{padding:23px 18px}.panel p{font-size:12px}}
 </style>
 </head>
 <body>
-<div id="game">
-  <canvas id="c" width="1100" height="700" aria-label="Vase Emergency game"></canvas>
-  <div class="hud">
-    <div class="topbar"><div class="brand">🫙 VASE EMERGENCY <small>// FRIENDSLOP</small></div><div class="score"><span id="score">0</span><span>/ 1,000 glued</span><div class="bar"><div id="progress"></div></div></div></div>
-    <div id="toast"></div>
-    <div class="bottom"><div class="controls"><b>PLAYER 1</b> WASD move · hold E to scoop / glue<br><b>PLAYER 2</b> ←↑↓→ move · hold ENTER to scoop / glue<br>Grab shards from rubble piles, then bring them to the workbench. Bumping your pal makes you spill!</div><div class="players"><div class="playercard" style="border-color:#e65376"><b>🩷 P1 <span class="carry" id="carry1">0</span></b><span>shards in your arms</span></div><div class="playercard" style="border-color:#4385ec"><b>💙 P2 <span class="carry" id="carry2">0</span></b><span>shards in your arms</span></div></div></div>
-  </div>
-  <div class="overlay" id="overlay"><div class="panel"><h1>VASE<br>EMERGENCY!</h1><p>Your extremely expensive vase exploded into <b>1,000 pieces</b>.<br>Work together to pick up the shards and glue it back together. Try not to body-check each other.</p><p class="hint">Two-player local co-op. Player 2 is optional, so you can also play solo.</p><button id="start">START THE REPAIR</button></div></div>
+<div id="app">
+<canvas id="view" aria-label="Three-dimensional broken vase jigsaw"></canvas><div id="vignette"></div><div id="flash"></div>
+<header>
+ <div class="brand"><div class="brandIcon">🫙</div><div><h1>VASE EMERGENCY</h1><div class="sub">SHARDSTORM // TABLETOP REPAIR</div></div></div>
+ <div class="stats">
+  <div class="stat pill"><label>Largest glued cluster</label><strong id="progressText">—</strong><div class="progressTrack"><div class="progressFill" id="progressFill"></div></div></div>
+  <div class="stat pill"><label>Time on the clock</label><strong id="clock">00:00</strong></div>
+  <div class="stat pill"><label>Glue streak</label><strong id="combo">×0</strong></div>
+ </div>
+</header>
+<div class="actions"><button class="smallbtn" id="restart">⟲ RESTART</button><button class="smallbtn" id="sound">♫ SOUND ON</button></div>
+<div id="toast"></div>
+<div id="bottom"><div class="instructions"><b>DRAG</b> pieces · <b>Q / E</b> rotate 90° · <b>RIGHT-DRAG</b> orbit · <b>WHEEL</b> zoom<br>Find matching broken edges + glaze pattern. No ghost slots. Build anywhere on the table.</div><div class="modeHud"><strong id="modeName">— PIECES</strong>Local co-op: pass the mouse, argue about the tabs.</div></div>
+<div class="overlay" id="startScreen"><div class="panel">
+ <div class="eyebrow">two friends · one spectacular accident</div><h2>GLUE IT<br><em>BACK.</em></h2>
+ <p>The vase shattered into tiny 3D jigsaw pieces. Drag, rotate, and fit every shard by its broken edges and glaze pattern. No ghost outline. No suggested pieces. Start anywhere; the first correct join becomes your anchor.</p>
+ <div class="modes" id="modes">
+  <button class="mode active" data-n="10"><strong>10</strong><span>CHILL</span></button><button class="mode" data-n="50"><strong>50</strong><span>WARMUP</span></button><button class="mode" data-n="100"><strong>100</strong><span>CHALLENGE</span></button><button class="mode" data-n="200"><strong>200</strong><span>SPICY</span></button><button class="mode" data-n="500"><strong>500</strong><span>FERAL</span></button><button class="mode" data-n="1000"><strong>1000</strong><span>UNHINGED</span></button>
+ </div>
+ <button class="primary" id="play">BREAK THE TAPE</button><div class="fine">Loose pieces can join an existing cluster. Connected clusters move as one.<br>Completed jigsaw rolls itself back into a real 3D vase.</div>
+ </div></div>
+<div class="overlay" id="winScreen" style="display:none"><div class="panel" id="winPanel"><div class="winIcon">🏺</div><div class="eyebrow">structural integrity: surprisingly high</div><h2>VASE<br><em>RESTORED.</em></h2><p>All shards rejoined. Friendship status: mostly intact.</p><div class="winStats"><div><b id="winTime">00:00</b>REPAIR TIME</div><div><b id="winMode">10</b>SHARDS</div><div><b id="winCombo">×0</b>BEST STREAK</div></div><button class="primary" id="again">RUN IT BACK</button><div class="fine">Choose a different piece count from the restart menu.</div></div></div>
 </div>
-<script>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
 (()=>{
 'use strict';
-const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
-const W=1100,H=700, cx=550,cy=350, stationR=91;
-const scoreEl=document.getElementById('score'),barEl=document.getElementById('progress'),c1=document.getElementById('carry1'),c2=document.getElementById('carry2'),toastEl=document.getElementById('toast');
-const keys=new Set(); let running=false,won=false,last=0,delivered=0,ground=[],players=[],effects=[],toastTime=0,shake=0;
-const colors=['#84c9d9','#f6d17a','#e68791','#a58bd6','#f5efe1','#5b9dff','#ff9274'];
-const piles=[ [135,145],[330,125],[550,115],[770,130],[970,155],[145,535],[345,575],[555,570],[770,565],[965,530] ];
-function rand(min,max){return min+Math.random()*(max-min)}
-function makePiece(x,y){const a=rand(0,Math.PI*2),r=rand(3,12);return {x,y,rot:rand(0,6.28),s:rand(3,7),color:colors[Math.floor(Math.random()*colors.length)],vx:Math.cos(a)*r,vy:Math.sin(a)*r,spin:rand(-2,2)}}
-function reset(){delivered=0;ground=[];effects=[];won=false;players=[
- {id:1,x:cx-32,y:cy+118,color:'#ff6b8a',outline:'#a92e58',keys:['KeyA','KeyD','KeyW','KeyS'],action:'KeyE',carry:0,glue:0,flash:0},
- {id:2,x:cx+32,y:cy+118,color:'#5b9dff',outline:'#2f56aa',keys:['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'],action:'Enter',carry:0,glue:0,flash:0}
-];
- for(const [px,py] of piles){for(let i=0;i<100;i++){const a=Math.random()*6.283,r=Math.sqrt(Math.random())*52;ground.push(makePiece(px+Math.cos(a)*r,py+Math.sin(a)*r))}}
- updateHud(); draw();
+const canvas=document.getElementById('view'),app=document.getElementById('app');
+const progressText=document.getElementById('progressText'),progressFill=document.getElementById('progressFill'),clockEl=document.getElementById('clock'),comboEl=document.getElementById('combo'),modeName=document.getElementById('modeName'),toastEl=document.getElementById('toast');
+const startScreen=document.getElementById('startScreen'),winScreen=document.getElementById('winScreen'),flashEl=document.getElementById('flash');
+let renderer,scene,camera,tableGroup,pieceGroup,decorGroup,artCanvas,artTexture,frontMat,sideMat,raycaster,dragPlane;
+let pieces=[],groups=new Set(),neighbors=[],selectedGroup=null,selectedPiece=null,mode=10,cols=5,rows=2,cell=2.4,boardW=12,boardD=4.8,outerX=18,outerZ=14;
+let isPlaying=false,isWon=false,dragging=false,orbiting=false,panning=false,pointerId=null,lastPointer={x:0,y:0},dragOffset={x:0,z:0},cameraTarget=new THREE.Vector3(0,0,0),cameraTheta=0,cameraPhi=.72,cameraRadius=25,clockStart=0,elapsed=0,lastSnap=-10,combo=0,bestCombo=0,toastTimer=0,soundEnabled=true,audioCtx=null,animClock=0,ceremony=null;
+const mouse=new THREE.Vector2(), tmpV=new THREE.Vector3();
+const modeGrid={10:[5,2],50:[10,5],100:[10,10],200:[20,10],500:[25,20],1000:[40,25]};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function rndRange(a,b){return a+Math.random()*(b-a)}
+function rotateXZ(x,z,a){const c=Math.cos(a),s=Math.sin(a);return [x*c+z*s,-x*s+z*c]}
+function angleDiff(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
+function fmtTime(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+function seeded(n){let x=(n^0x9e3779b9)>>>0;x=Math.imul(x^(x>>>16),0x21f0aaad);x=Math.imul(x^(x>>>15),0x735a2d97);x^=x>>>15;return (x>>>0)/4294967296}
+function edgeHash(a,b,axis){return seeded((a+31)*73856093^(b+17)*19349663^(axis==='v'?83492791:297657976))>.5?1:-1}
+
+function makeWoodTexture(){
+ const c=document.createElement('canvas');c.width=1024;c.height=1024;const g=c.getContext('2d');
+ const gr=g.createLinearGradient(0,0,1024,900);gr.addColorStop(0,'#94704e');gr.addColorStop(.5,'#79573f');gr.addColorStop(1,'#654832');g.fillStyle=gr;g.fillRect(0,0,1024,1024);
+ for(let y=0;y<1024;y+=128){g.fillStyle=y%256===0?'#00000011':'#f7d7a00b';g.fillRect(0,y,1024,2);for(let x=0;x<1024;x+=250){g.beginPath();g.ellipse(x+(y%2)*96,y+65,85,28,0,0,Math.PI*2);g.strokeStyle='#d9ae7a12';g.lineWidth=2;g.stroke()}}
+ for(let i=0;i<2200;i++){const x=Math.random()*1024,y=Math.random()*1024;g.fillStyle=Math.random()>.5?'#f4d29b0b':'#21160f10';g.fillRect(x,y,Math.random()*22+.5,Math.random()*1.4+.2)}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,3);t.colorSpace=THREE.SRGBColorSpace;return t;
 }
-function updateHud(){scoreEl.textContent=delivered.toLocaleString();barEl.style.width=(delivered/10)+'%';c1.textContent=players[0]?.carry||0;c2.textContent=players[1]?.carry||0}
-function showToast(text){toastEl.textContent=text;toastEl.classList.add('show');toastTime=1.25}
-function pathVase(){ctx.beginPath();ctx.moveTo(cx-17,cy-52);ctx.quadraticCurveTo(cx-14,cy-38,cx-27,cy-28);ctx.lineTo(cx-40,cy+34);ctx.quadraticCurveTo(cx-44,cy+53,cx-25,cy+58);ctx.quadraticCurveTo(cx,cy+64,cx+25,cy+58);ctx.quadraticCurveTo(cx+44,cy+53,cx+40,cy+34);ctx.lineTo(cx+27,cy-28);ctx.quadraticCurveTo(cx+14,cy-38,cx+17,cy-52);ctx.closePath()}
-// Exactly 1,000 little ceramic shards, packed into a jittered mosaic inside the vase.
-const vaseTiles=[];{
- let seed=72191;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
- for(let row=0;row<40;row++){
-  const y=cy-50+(row+.5)*2.65, localY=y-cy;
-  const half=localY < -28 ? 17+(localY+52)*(10/24) : localY < 34 ? 27+(localY+28)*(13/62) : 40-(localY-34)*(15/24);
-  const cellW=(2*half)/25;
-  for(let col=0;col<25;col++)vaseTiles.push({x:cx-half+(col+.5)*cellW+(rnd()-.5)*cellW*.18,y:y+(rnd()-.5)*1.2,w:cellW*.94,h:2.5+rnd()*.12,color:colors[Math.floor(rnd()*colors.length)],j:rnd()*.1});
+function makeArt(){
+ const c=document.createElement('canvas');c.width=1800;c.height=1200;const g=c.getContext('2d'),w=c.width,h=c.height;
+ const bg=g.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#0d4d5b');bg.addColorStop(.3,'#12636a');bg.addColorStop(.72,'#184e61');bg.addColorStop(1,'#0b3549');g.fillStyle=bg;g.fillRect(0,0,w,h);
+ // horizontal glaze bands: continuous around the vase circumference
+ const bands=[[.055,12,'#edbd6e'],[.092,5,'#f4e2b7'],[.15,17,'#edbd6e'],[.23,5,'#a9dbcb'],[.3,9,'#eb846e'],[.7,9,'#eb846e'],[.77,5,'#a9dbcb'],[.85,17,'#edbd6e'],[.908,5,'#f4e2b7'],[.945,12,'#edbd6e']];
+ for(const [yf,th,col] of bands){g.fillStyle=col;g.fillRect(0,yf*h,w,th);g.fillStyle='#fff4d944';g.fillRect(0,yf*h,w,Math.max(1,th*.18))}
+ // Fine dotted running borders.
+ for(const yf of [.12,.27,.73,.88]){g.fillStyle='#f7d786';for(let x=10;x<w;x+=23){g.beginPath();g.arc(x,yf*h,3,0,Math.PI*2);g.fill()}}
+ // Repeating pomegranate / flower medallions, carefully tiled at six equal intervals.
+ const period=300;
+ for(let k=0;k<6;k++){
+  const x=k*period+period/2;
+  // diamond lattice
+  g.save();g.translate(x,0);g.strokeStyle='#e7c177';g.lineWidth=5;
+  for(const yy of [190,1010]){g.beginPath();g.moveTo(-105,yy);g.lineTo(0,yy-65);g.lineTo(105,yy);g.lineTo(0,yy+65);g.closePath();g.stroke();g.fillStyle='#e98370';g.beginPath();g.arc(0,yy,15,0,Math.PI*2);g.fill()}
+  // four small leaves around the central medallion
+  g.translate(0,600);g.strokeStyle='#efd18b';g.lineWidth=5;
+  for(let j=0;j<8;j++){const a=j*Math.PI/4;g.save();g.rotate(a);g.beginPath();g.ellipse(0,-158,26,62,0,0,Math.PI*2);g.fillStyle=j%2?'#e98b70':'#91cdb7';g.fill();g.stroke();g.restore()}
+  g.beginPath();g.arc(0,0,52,0,Math.PI*2);g.fillStyle='#f3d17d';g.fill();g.stroke();g.beginPath();g.arc(0,0,35,0,Math.PI*2);g.fillStyle='#e9816f';g.fill();g.beginPath();g.arc(0,0,12,0,Math.PI*2);g.fillStyle='#f9e3a4';g.fill();
+  g.restore();
  }
+ // Small glaze flecks make high-piece-count shards individually legible.
+ let sd=19;const rr=()=>{sd=(sd*1664525+1013904223)>>>0;return sd/4294967296};
+ for(let i=0;i<650;i++){const x=rr()*w,y=(.17+rr()*.66)*h;g.save();g.translate(x,y);g.rotate(rr()*Math.PI);g.fillStyle=i%3?'#f7dfae77':'#ef8c7777';g.fillRect(-2,-7,4,14);g.restore()}
+ return c;
 }
-function drawBackground(){
- ctx.fillStyle='#ede0cb';ctx.fillRect(0,0,W,H);
- // parquet floor
- for(let y=0;y<H;y+=56){for(let x=0;x<W;x+=110){const alt=((x/110+y/56)|0)%2;ctx.fillStyle=alt?'#f0e5d3':'#e9ddc8';ctx.fillRect(x+2,y+2,106,52);ctx.strokeStyle='#e1d2bb';ctx.lineWidth=1;ctx.strokeRect(x+2,y+2,106,52)}}
- // taped work area
- ctx.save();ctx.setLineDash([9,9]);ctx.lineWidth=4;ctx.strokeStyle='#b9a88f';ctx.beginPath();ctx.roundRect(30,68,W-60,H-136,28);ctx.stroke();ctx.restore();
- // little rug under the repair station
- ctx.fillStyle='#b8e5d5';ctx.beginPath();ctx.ellipse(cx,cy,144,120,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#6aaf9b';ctx.lineWidth=4;ctx.setLineDash([7,7]);ctx.stroke();ctx.setLineDash([]);
+function buildScene(){
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(1.65,window.devicePixelRatio||1));renderer.setSize(innerWidth,innerHeight,false);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.13;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ scene=new THREE.Scene();scene.background=new THREE.Color('#1a1c2a');scene.fog=new THREE.Fog('#1a1c2a',45,100);
+ camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,180);
+ scene.add(new THREE.HemisphereLight('#dce7ff','#5b4537',2.1));
+ const key=new THREE.DirectionalLight('#fff0d5',3.2);key.position.set(-8,22,11);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-34;key.shadow.camera.right=34;key.shadow.camera.top=28;key.shadow.camera.bottom=-28;key.shadow.bias=-.0004;scene.add(key);
+ const fill=new THREE.DirectionalLight('#83b9dc',1.1);fill.position.set(15,13,-16);scene.add(fill);
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:'#222330',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.12;floor.receiveShadow=true;scene.add(floor);
+ tableGroup=new THREE.Group();scene.add(tableGroup);
+ const wood=makeWoodTexture();const topMat=new THREE.MeshStandardMaterial({map:wood,color:'#d6b58c',roughness:.78});
+ const top=new THREE.Mesh(new THREE.BoxGeometry(76,.72,48),topMat);top.position.y=-.38;top.receiveShadow=true;top.castShadow=true;tableGroup.add(top);
+ const edgeMat=new THREE.MeshStandardMaterial({color:'#4f332b',roughness:.75});
+ for(const x of [-34,34])for(const z of [-20,20]){const leg=new THREE.Mesh(new THREE.BoxGeometry(1.4,8,1.4),edgeMat);leg.position.set(x,-4.75,z);leg.castShadow=true;tableGroup.add(leg)}
+ // Deliberately off to the side: a glue bottle and two paint dabs, not a target marker.
+ const bottleMat=new THREE.MeshStandardMaterial({color:'#ee886d',roughness:.28,metalness:.05});const bottle=new THREE.Mesh(new THREE.CylinderGeometry(.42,.52,1.6,20),bottleMat);bottle.position.set(31,.8,15);bottle.castShadow=true;tableGroup.add(bottle);
+ const cap=new THREE.Mesh(new THREE.CylinderGeometry(.22,.25,.5,16),new THREE.MeshStandardMaterial({color:'#f0d68f',roughness:.35}));cap.position.set(31,1.82,15);cap.castShadow=true;tableGroup.add(cap);
+ const label=new THREE.Mesh(new THREE.BoxGeometry(.82,.48,.03),new THREE.MeshStandardMaterial({color:'#f9eac9'}));label.position.set(31,.86,15.48);tableGroup.add(label);
+ const dab1=new THREE.Mesh(new THREE.SphereGeometry(.27,16,10),new THREE.MeshStandardMaterial({color:'#78c6b2',roughness:.8}));dab1.scale.set(1,.25,.8);dab1.position.set(28,.14,16);tableGroup.add(dab1);
+ const dab2=dab1.clone();dab2.material=new THREE.MeshStandardMaterial({color:'#e6b655',roughness:.8});dab2.position.set(28.7,.13,16.3);tableGroup.add(dab2);
+ decorGroup=new THREE.Group();scene.add(decorGroup);pieceGroup=new THREE.Group();scene.add(pieceGroup);
+ artCanvas=makeArt();artTexture=new THREE.CanvasTexture(artCanvas);artTexture.colorSpace=THREE.SRGBColorSpace;artTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());artTexture.needsUpdate=true;
+ frontMat=new THREE.MeshStandardMaterial({map:artTexture,roughness:.4,metalness:.025,side:THREE.DoubleSide});sideMat=new THREE.MeshStandardMaterial({color:'#ad7254',roughness:.63,metalness:.02});
+ raycaster=new THREE.Raycaster();raycaster.params.Line.threshold=.05;dragPlane=new THREE.Plane(new THREE.Vector3(0,1,0),-.13);
+ bindInput();updateCameraFit();animate();
 }
-function drawStation(){
- // table shadow + tabletop
- ctx.fillStyle='#66536c33';ctx.beginPath();ctx.ellipse(cx+7,cy+17,111,89,0,0,Math.PI*2);ctx.fill();
- ctx.fillStyle='#bd8e68';ctx.beginPath();ctx.ellipse(cx,cy+8,109,86,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#684d55';ctx.lineWidth=5;ctx.stroke();
- ctx.fillStyle='#f4d9aa';ctx.beginPath();ctx.ellipse(cx,cy,102,79,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff2d0';ctx.lineWidth=4;ctx.stroke();
- // glue tube and label
- ctx.save();ctx.translate(cx+67,cy-49);ctx.rotate(-.65);ctx.fillStyle='#fff7ec';ctx.strokeStyle='#574961';ctx.lineWidth=2.5;ctx.beginPath();ctx.roundRect(-8,-20,16,39,4);ctx.fill();ctx.stroke();ctx.fillStyle='#75dfb3';ctx.fillRect(-7,-4,14,8);ctx.fillStyle='#f5cf56';ctx.beginPath();ctx.moveTo(-5,-20);ctx.lineTo(5,-20);ctx.lineTo(2,-29);ctx.lineTo(-2,-29);ctx.closePath();ctx.fill();ctx.restore();
- // vase base silhouette
- pathVase();ctx.fillStyle='#faf1dc';ctx.fill();ctx.strokeStyle='#40384f';ctx.lineWidth=4;ctx.stroke();
- // glued shards appear inside vase
- ctx.save();pathVase();ctx.clip();
- for(let i=0;i<Math.min(delivered,vaseTiles.length);i++){const t=vaseTiles[i],w=t.w,h=t.h;ctx.fillStyle=t.color;ctx.beginPath();ctx.moveTo(t.x-w*.49,t.y-h*.43);ctx.lineTo(t.x+w*(.22+t.j),t.y-h*.48);ctx.lineTo(t.x+w*.49,t.y+h*.17);ctx.lineTo(t.x-w*.08,t.y+h*.49);ctx.lineTo(t.x-w*.47,t.y+h*.12);ctx.closePath();ctx.fill()}
- // subtle crack lines on unfinished parts
- ctx.globalAlpha=.16;ctx.strokeStyle='#41394e';ctx.lineWidth=1;for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(cx-28+i*8,cy-20);ctx.lineTo(cx-32+i*9,cy+39);ctx.stroke()}ctx.restore();
- pathVase();ctx.strokeStyle='#40384f';ctx.lineWidth=4;ctx.stroke();
- // neck rim
- ctx.fillStyle='#f7ead0';ctx.beginPath();ctx.ellipse(cx,cy-51,19,5,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#40384f';ctx.lineWidth=3;ctx.stroke();
- ctx.fillStyle='#473d55';ctx.font='900 12px system-ui';ctx.textAlign='center';ctx.fillText('GLUE ZONE',cx,cy+96);
+function makeEdge(shape,p0,p1,nx,ny,tab,scale){
+ const prof=[[0,0],[.17,0],[.24,.025],[.30,.065],[.38,.115],[.5,.14],[.62,.115],[.70,.065],[.76,.025],[.83,0],[1,0]];
+ for(let i=1;i<prof.length;i++){const [t0,d0]=prof[i-1],[t1,d1]=prof[i];const steps=i===4||i===5||i===6?3:1;for(let j=1;j<=steps;j++){const u=j/steps,t=t0+(t1-t0)*u,d=(d0+(d1-d0)*u)*tab*scale;shape.lineTo(p0.x+(p1.x-p0.x)*t+nx*d,p0.y+(p1.y-p0.y)*t+ny*d)}}
 }
-function drawPiece(p){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.color;ctx.strokeStyle='#51475c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-p.s,-p.s*.55);ctx.lineTo(p.s*1.25,-p.s*.2);ctx.lineTo(p.s*.15,p.s*1.15);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
-function drawPlayer(p){
- // carried shard orbit
- if(p.carry>0){const n=Math.min(8,Math.ceil(p.carry/8));for(let i=0;i<n;i++){const a=(performance.now()/550)+i*Math.PI*2/n;ctx.fillStyle=colors[(i+p.id)%colors.length];ctx.beginPath();ctx.arc(p.x+Math.cos(a)*19,p.y-18+Math.sin(a)*8,3.2,0,Math.PI*2);ctx.fill()}}
- // body shadow
- ctx.fillStyle='#332b4830';ctx.beginPath();ctx.ellipse(p.x+2,p.y+13,18,8,0,0,Math.PI*2);ctx.fill();
- // arms
- ctx.strokeStyle=p.outline;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-11,p.y+1);ctx.lineTo(p.x-18,p.y+7);ctx.moveTo(p.x+11,p.y+1);ctx.lineTo(p.x+18,p.y+7);ctx.stroke();
- ctx.fillStyle=p.color;ctx.strokeStyle=p.outline;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(p.x-14,p.y-15,28,30,10);ctx.fill();ctx.stroke();
- // eyes look toward center or movement
- ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(p.x-5,p.y-5,4,5,0,0,Math.PI*2);ctx.ellipse(p.x+5,p.y-5,4,5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#302a43';ctx.beginPath();ctx.arc(p.x-4,p.y-4,1.7,0,Math.PI*2);ctx.arc(p.x+6,p.y-4,1.7,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle='#302a43';ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(p.x,p.y+1,4,0.2,Math.PI-.2);ctx.stroke();
- ctx.fillStyle='#40384f';ctx.font='900 9px system-ui';ctx.textAlign='center';ctx.fillText('P'+p.id,p.x,p.y+27);
- if(keys.has(p.action)&&running){ctx.strokeStyle='#ffffffaa';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.stroke()}
+function makePieceGeometry(row,col,tx,ty){
+ const w=cell*.96,h=cell*.96,amp=Math.min(w,h);
+ const topTab=row>0?edgeHash(row,col,'h'):0;
+ const rightTab=col<cols-1?-edgeHash(row,col+1,'v'):0;
+ const bottomTab=row<rows-1?-edgeHash(row+1,col,'h'):0;
+ const leftTab=col>0?edgeHash(row,col,'v'):0;
+ const sh=new THREE.Shape();sh.moveTo(-w/2,h/2);
+ makeEdge(sh,{x:-w/2,y:h/2},{x:w/2,y:h/2},0,1,topTab,amp);
+ makeEdge(sh,{x:w/2,y:h/2},{x:w/2,y:-h/2},1,0,rightTab,amp);
+ makeEdge(sh,{x:w/2,y:-h/2},{x:-w/2,y:-h/2},0,-1,bottomTab,amp);
+ makeEdge(sh,{x:-w/2,y:-h/2},{x:-w/2,y:h/2},-1,0,leftTab,amp);sh.closePath();
+ const geo=new THREE.ExtrudeGeometry(sh,{depth:.105,bevelEnabled:false,curveSegments:2,steps:1});
+ const pos=geo.attributes.position,uv=new Float32Array(pos.count*2);
+ for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i);uv[i*2]=(tx+x+boardW/2)/boardW;uv[i*2+1]=(ty+y+boardD/2)/boardD}
+ geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));geo.rotateX(-Math.PI/2);geo.computeVertexNormals();geo.computeBoundingSphere();return geo;
 }
-function draw(){
- ctx.save();if(shake>0){ctx.translate(rand(-shake,shake),rand(-shake,shake))}drawBackground();
- // piles outlined in soft circles, with counts
- for(const [px,py] of piles){let count=0;for(const q of ground){if((q.x-px)**2+(q.y-py)**2<65**2)count++}if(count){ctx.fillStyle='#ffffff35';ctx.beginPath();ctx.arc(px,py,56,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff7e899';ctx.lineWidth=2;ctx.setLineDash([3,5]);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#51475c';ctx.font='900 10px system-ui';ctx.textAlign='center';ctx.fillText('RUBBLE ×'+count,px,py+66)}}
- for(const q of ground)drawPiece(q);
- drawStation();for(const e of effects){ctx.globalAlpha=Math.max(0,e.life);ctx.fillStyle=e.color;ctx.font=`1000 ${e.size}px system-ui`;ctx.textAlign='center';ctx.fillText(e.text,e.x,e.y);ctx.globalAlpha=1}
- for(const p of players)drawPlayer(p);
- ctx.restore();
+function makeVaseTexture(){
+ // The completed glaze is the same pattern the players see only in fragments during play.
+ return artTexture;
 }
-function movePlayer(p,dt){let dx=0,dy=0;const [left,right,up,down]=p.keys;if(keys.has(left))dx--;if(keys.has(right))dx++;if(keys.has(up))dy--;if(keys.has(down))dy++;if(dx&&dy){dx*=.7071;dy*=.7071}const speed=238;p.x=Math.max(45,Math.min(W-45,p.x+dx*speed*dt));p.y=Math.max(86,Math.min(H-63,p.y+dy*speed*dt));}
-function collect(p,dt){if(!keys.has(p.action)){p.glue=0;return}const d=Math.hypot(p.x-cx,p.y-cy);if(d<stationR+16){if(p.carry>0){p.glue+=dt;if(p.glue>.62){const n=Math.min(p.carry,1000-delivered);if(n>0){delivered+=n;p.carry-=n;effects.push({x:cx,y:cy-75,text:'+'+n+' GLUED!',color:'#df596f',size:27,life:1});showToast(n>=100?'THE VASE IS GETTING LESS BAD!':'NICE, MORE VASE!');shake=5;updateHud();if(delivered>=1000){won=true;running=false;document.getElementById('overlay').innerHTML='<div class="panel"><h1>VASE<br>RESTORED!</h1><p>You glued all <b>1,000 pieces</b> back together.<br>Your friendship survived the incident. Mostly.</p><button id="again">PLAY AGAIN</button></div>';document.getElementById('overlay').style.display='grid';document.getElementById('again').onclick=startGame;}}p.glue=0}}return}
- p.glue=0;if(p.carry>=250)return;let grabbed=0;const radius=66;for(let i=ground.length-1;i>=0&&p.carry<250;i--){const q=ground[i];if((q.x-p.x)**2+(q.y-p.y)**2<radius*radius){ground.splice(i,1);p.carry++;grabbed++;if(p.carry>=250)break}}
- if(grabbed){effects.push({x:p.x,y:p.y-28,text:'+'+grabbed,color:'#51475c',size:13,life:.35});updateHud()}
+function addVaseDecoration(group){
+ const profile=[new THREE.Vector2(.02,0),new THREE.Vector2(.70,0),new THREE.Vector2(.98,.12),new THREE.Vector2(1.42,.62),new THREE.Vector2(1.86,1.45),new THREE.Vector2(2.03,2.28),new THREE.Vector2(1.98,2.92),new THREE.Vector2(1.70,3.48),new THREE.Vector2(1.15,3.87),new THREE.Vector2(.77,4.00),new THREE.Vector2(.75,4.86),new THREE.Vector2(.94,4.99),new THREE.Vector2(.91,5.12),new THREE.Vector2(.59,5.12),new THREE.Vector2(.55,4.00),new THREE.Vector2(.88,3.82)];
+ const geo=new THREE.LatheGeometry(profile,80);geo.computeVertexNormals();const vaseMat=new THREE.MeshPhysicalMaterial({map:makeVaseTexture(),color:'#fff5df',roughness:.29,metalness:.03,clearcoat:.7,clearcoatRoughness:.22});
+ const vase=new THREE.Mesh(geo,vaseMat);vase.position.y=.12;vase.castShadow=true;vase.receiveShadow=true;group.add(vase);
+ const gold=new THREE.MeshStandardMaterial({color:'#e9bf71',metalness:.58,roughness:.32});
+ for(const [y,r] of [[.17,.76],[4.04,.77],[5.13,.77]]){const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.055,10,64),gold);ring.rotation.x=Math.PI/2;ring.position.y=y;ring.castShadow=true;group.add(ring)}
+ // Handmade little handles make the reveal unmistakably three-dimensional.
+ const handleMat=new THREE.MeshStandardMaterial({color:'#d99c65',roughness:.37,metalness:.08});
+ for(const sign of [-1,1]){const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(sign*1.55,3.45,0),new THREE.Vector3(sign*2.3,3.72,.02),new THREE.Vector3(sign*2.65,3.2,.02),new THREE.Vector3(sign*2.34,2.65,.02),new THREE.Vector3(sign*1.88,2.75,0)]);const handle=new THREE.Mesh(new THREE.TubeGeometry(curve,28,.13,9,false),handleMat);handle.castShadow=true;group.add(handle)}
+ return vase;
 }
-let bumpCD=0;
-function collisions(dt){bumpCD-=dt;const a=players[0],b=players[1],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<31&&d>0){const push=(31-d)/2;a.x-=dx/d*push;b.x+=dx/d*push;if(bumpCD<=0){bumpCD=1.15;const spillA=Math.min(a.carry,Math.ceil(Math.random()*5)),spillB=Math.min(b.carry,Math.ceil(Math.random()*5));for(let i=0;i<spillA;i++){ground.push(makePiece(a.x+rand(-16,16),a.y+rand(-16,16)));a.carry--}for(let i=0;i<spillB;i++){ground.push(makePiece(b.x+rand(-16,16),b.y+rand(-16,16)));b.carry--}effects.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2-30,text:'FRIENDSHIP IMPACT!',color:'#ea5473',size:19,life:.8});shake=4;updateHud()}}}
-function frame(t){if(!running)return;const dt=Math.min(.04,(t-last)/1000||0);last=t;for(const p of players){movePlayer(p,dt);collect(p,dt)}collisions(dt);for(const e of effects)e.life-=dt;effects=effects.filter(e=>e.life>0);if(toastTime>0){toastTime-=dt;if(toastTime<=0)toastEl.classList.remove('show')}shake=Math.max(0,shake-dt*18);draw();requestAnimationFrame(frame)}
-function startGame(){document.getElementById('overlay').style.display='none';reset();running=true;last=performance.now();requestAnimationFrame(frame)}
-document.getElementById('start').onclick=startGame;
-window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(!running&&e.code==='Space'&&!won)startGame()});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>keys.clear());
-// Keep the drawing crisp while the canvas scales to the chat/device viewport.
-function fit(){const box=document.getElementById('game').getBoundingClientRect();const dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr);ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);if(!running)draw()}
-window.addEventListener('resize',fit);fit();reset();
+function getSlots(count,spacing){
+ const candidates=[];const step=spacing;
+ for(let z=-outerZ+step/2;z<=outerZ;z+=step){for(let x=-outerX+step/2;x<=outerX;x+=step){
+   // Keep a quiet work area in the middle for the growing puzzle, without drawing a board or ghost slots.
+   if(Math.abs(x)<boardW/2+cell*.72&&Math.abs(z)<boardD/2+cell*.72)continue;
+   const e=(x*x)/(outerX*outerX)+(z*z)/(outerZ*outerZ);if(e>.99)continue;
+   candidates.push({x,z});
+ }}
+ for(let i=candidates.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]]}
+ return candidates.slice(0,count);
+}
+function clearPuzzle(){
+ for(const p of pieces){pieceGroup.remove(p.mesh);p.mesh.geometry.dispose()}
+ pieces=[];groups.clear();neighbors=[];selectedGroup=null;selectedPiece=null;
+ if(ceremony){scene.remove(ceremony);ceremony.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!Array.isArray(o.material)&&o.material!==frontMat&&o.material!==sideMat)o.material.dispose()});ceremony=null}
+ for(const child of [...decorGroup.children]){decorGroup.remove(child);if(child.geometry)child.geometry.dispose();if(child.material&&child.material!==frontMat&&child.material!==sideMat&&!Array.isArray(child.material))child.material.dispose()}
+}
+function startPuzzle(n=mode){
+ mode=n;[cols,rows]=modeGrid[mode];cell=12/cols;boardW=cols*cell;boardD=rows*cell;
+ outerX=boardW/2+cell*3+Math.sqrt(mode)*cell*.35;outerZ=boardD/2+cell*3+Math.sqrt(mode)*cell*.35;
+ clearPuzzle();
+ const slots=getSlots(mode,cell*1.11);if(slots.length<mode){console.warn('Not enough scatter slots',slots.length,mode)}
+ const expected=[];const byRC=new Map();
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+  const idx=r*cols+c,tx=(c-(cols-1)/2)*cell,ty=((rows-1)/2-r)*cell,tz=-ty;
+  expected.push({id:idx,row:r,col:c,tx,tz,neighbors:[]});byRC.set(`${r},${c}`,idx)
+ }
+ for(const p of expected){for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){const q=byRC.get(`${p.row+dr},${p.col+dc}`);if(q!==undefined)p.neighbors.push(q)}}
+ neighbors=expected.map(e=>e.neighbors);
+ for(let i=0;i<mode;i++){
+  const e=expected[i],slot=slots[i]||{x:rndRange(-outerX,outerX),z:rndRange(-outerZ,outerZ)};
+  const geometry=makePieceGeometry(e.row,e.col,e.tx,e.tz);
+  const mesh=new THREE.Mesh(geometry,[frontMat,sideMat]);mesh.castShadow=mode<=200;mesh.receiveShadow=false;mesh.userData.pieceId=i;pieceGroup.add(mesh);
+  const angle=Math.floor(Math.random()*4)*Math.PI/2,wx=slot.x+rndRange(-cell*.08,cell*.08),wz=slot.z+rndRange(-cell*.08,cell*.08);
+  mesh.rotation.set(0,angle,0);mesh.position.set(wx,.025,wz);
+  const group={members:[i],angle,ox:wx-rotateXZ(e.tx,e.tz,angle)[0],oz:wz-rotateXZ(e.tx,e.tz,angle)[1],id:i};
+  const p={...e,mesh,group};pieces.push(p);groups.add(group);
+ }
+ isPlaying=true;isWon=false;dragging=false;orbiting=false;selectedGroup=null;selectedPiece=null;elapsed=0;clockStart=performance.now();lastSnap=-10;combo=0;bestCombo=0;ceremony=null;
+ progressText.textContent=`1 / ${mode}`;progressFill.style.width=`${100/mode}%`;clockEl.textContent='00:00';comboEl.textContent='×0';modeName.textContent=`${mode} SHARDS · NO GHOSTS`;
+ startScreen.style.display='none';winScreen.style.display='none';updateCameraFit();showToast(mode===10?'LOW-STAKES POTTERY DISASTER':'FIND YOUR FIRST MATCH');
+}
+function updateCameraFit(){
+ const fov=camera.fov*Math.PI/180,aspect=innerWidth/innerHeight;
+ const needV=(outerZ*.82+2.4)/Math.tan(fov/2),needH=(outerX*1.15)/(Math.tan(fov/2)*aspect);
+ cameraRadius=clamp(Math.max(needV,needH,18),17,86);cameraPhi=.72;cameraTheta=0;cameraTarget.set(0,0,0);updateCamera();
+}
+function updateCamera(){
+ cameraPhi=clamp(cameraPhi,.18,1.38);
+ const sin=Math.sin(cameraPhi);camera.position.set(cameraTarget.x+cameraRadius*sin*Math.sin(cameraTheta),cameraTarget.y+cameraRadius*Math.cos(cameraPhi),cameraTarget.z+cameraRadius*sin*Math.cos(cameraTheta));camera.lookAt(cameraTarget);camera.updateMatrixWorld();
+}
+function bindInput(){
+ canvas.addEventListener('contextmenu',e=>e.preventDefault());
+ canvas.addEventListener('pointerdown',e=>{
+  lastPointer={x:e.clientX,y:e.clientY};pointerId=e.pointerId;canvas.setPointerCapture(pointerId);
+  if(e.button===2){orbiting=true;return}
+  if(e.button===1||(e.button===0&&e.shiftKey)){panning=true;return}
+  if(e.button!==0||!isPlaying||isWon)return;
+  setMouse(e);raycaster.setFromCamera(mouse,camera);const hits=raycaster.intersectObjects(pieceGroup.children,false);
+  if(!hits.length){selectedGroup=null;selectedPiece=null;return}
+  const p=pieces[hits[0].object.userData.pieceId];if(!p)return;
+  selectedPiece=p;selectedGroup=p.group;dragging=true;
+  const point=new THREE.Vector3();raycaster.ray.intersectPlane(dragPlane,point);dragOffset.x=p.mesh.position.x-point.x;dragOffset.z=p.mesh.position.z-point.z;
+  e.preventDefault();
+ });
+ canvas.addEventListener('pointermove',e=>{
+  const dx=e.clientX-lastPointer.x,dy=e.clientY-lastPointer.y;lastPointer={x:e.clientX,y:e.clientY};
+  if(orbiting){cameraTheta-=dx*.007;cameraPhi=clamp(cameraPhi+dy*.006,.18,1.38);updateCamera();return}
+  if(panning){panCamera(dx,dy);return}
+  if(dragging&&selectedGroup){setMouse(e);raycaster.setFromCamera(mouse,camera);const point=new THREE.Vector3();if(raycaster.ray.intersectPlane(dragPlane,point)){const posX=point.x+dragOffset.x,posZ=point.z+dragOffset.z;const v=rotateXZ(selectedPiece.tx,selectedPiece.tz,selectedGroup.angle);selectedGroup.ox=posX-v[0];selectedGroup.oz=posZ-v[1];setGroupHeight(selectedGroup,.10);updateGroupMeshes(selectedGroup)}}
+ });
+ const finish=e=>{if(dragging&&selectedGroup){setGroupHeight(selectedGroup,.025);updateGroupMeshes(selectedGroup);resolveSnaps(selectedGroup)}dragging=false;orbiting=false;panning=false;if(pointerId!==null){try{canvas.releasePointerCapture(pointerId)}catch{}}pointerId=null};
+ canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
+ canvas.addEventListener('wheel',e=>{e.preventDefault();cameraRadius=clamp(cameraRadius*Math.exp(e.deltaY*.001),8,90);updateCamera()},{passive:false});
+ window.addEventListener('keydown',e=>{
+  if(!isPlaying||isWon)return;
+  if(e.code==='KeyQ'||e.code==='KeyE'){
+   e.preventDefault();if(!selectedGroup||!selectedPiece)return;
+   const delta=e.code==='KeyQ'?-Math.PI/2:Math.PI/2,pivot={x:selectedPiece.mesh.position.x,z:selectedPiece.mesh.position.z};selectedGroup.angle+=delta;
+   const v=rotateXZ(selectedPiece.tx,selectedPiece.tz,selectedGroup.angle);selectedGroup.ox=pivot.x-v[0];selectedGroup.oz=pivot.z-v[1];updateGroupMeshes(selectedGroup);resolveSnaps(selectedGroup);playTurn();
+  }
+  if(e.code==='Escape'){selectedGroup=null;selectedPiece=null}
+ });
+ window.addEventListener('resize',()=>{if(!renderer)return;renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();updateCamera()});
+}
+function setMouse(e){const rect=canvas.getBoundingClientRect();mouse.x=((e.clientX-rect.left)/rect.width)*2-1;mouse.y=-((e.clientY-rect.top)/rect.height)*2+1}
+function panCamera(dx,dy){
+ const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);right.y=0;right.normalize();const back=new THREE.Vector3().subVectors(camera.position,cameraTarget);const forward=new THREE.Vector3(-back.x,0,-back.z).normalize();const scale=cameraRadius*.0018;
+ cameraTarget.addScaledVector(right,-dx*scale);cameraTarget.addScaledVector(forward,dy*scale);updateCamera();
+}
+function setGroupHeight(g,y){for(const id of g.members)pieces[id].mesh.position.y=y}
+function updateGroupMeshes(g){for(const id of g.members){const p=pieces[id],v=rotateXZ(p.tx,p.tz,g.angle);p.mesh.position.x=g.ox+v[0];p.mesh.position.z=g.oz+v[1];p.mesh.rotation.set(0,g.angle,0)}}
+function mergeGroups(a,b,nearX,nearZ){
+ if(a===b)return a;
+ // Preserve the larger build as the anchor and rigidly snap the other cluster into its frame.
+ let fixed=a,moving=b;if(b.members.length>a.members.length){fixed=b;moving=a}
+ moving.angle=fixed.angle;moving.ox=fixed.ox;moving.oz=fixed.oz;
+ const y=.025;for(const id of moving.members){const p=pieces[id];p.group=fixed;p.mesh.position.y=y}
+ fixed.members.push(...moving.members);groups.delete(moving);updateGroupMeshes(fixed);combo=performance.now()/1000-lastSnap<4?combo+1:1;lastSnap=performance.now()/1000;bestCombo=Math.max(bestCombo,combo);comboEl.textContent='×'+combo;
+ playClink(combo);spawnSnap(nearX,nearZ,Math.min(18,5+Math.ceil(Math.log2(fixed.members.length+1))));
+ const quips=['CLEAN JOIN.','THAT EDGE WAS MADE FOR THAT.','GLUE IT AND MOVE ON.','FRIENDSHIP +1.','VASE MATH.','SUSPICIOUSLY GOOD FIT.','NICE LITTLE SHARD.'];
+ showToast(combo>1?`CHAIN ×${combo} · ${quips[Math.floor(Math.random()*quips.length)]}`:quips[Math.floor(Math.random()*quips.length)]);
+ updateProgress();return fixed;
+}
+function tryMergePair(a,b){
+ if(a.group===b.group)return null;
+ if(Math.abs(angleDiff(a.group.angle,b.group.angle))>.001)return null;
+ const expected=rotateXZ(b.tx-a.tx,b.tz-a.tz,a.group.angle),dx=b.mesh.position.x-a.mesh.position.x, dz=b.mesh.position.z-a.mesh.position.z;
+ if(Math.hypot(dx-expected[0],dz-expected[1])>cell*.28)return null;
+ const gx=(a.mesh.position.x+b.mesh.position.x)/2,gz=(a.mesh.position.z+b.mesh.position.z)/2;
+ return mergeGroups(a.group,b.group,gx,gz);
+}
+function resolveSnaps(g){
+ if(!g||!groups.has(g))return;
+ let changed=true,guard=0;
+ while(changed&&guard++<mode){changed=false;
+  const ids=[...g.members];
+  outer:for(const id of ids){const p=pieces[id];for(const qid of p.neighbors){const q=pieces[qid];if(q.group===g)continue;const merged=tryMergePair(p,q);if(merged){g=merged;changed=true;break outer}}}
+ }
+ updateProgress();
+ if(groups.size===1&&pieces.length===mode&&!isWon)winGame();
+}
+function updateProgress(){
+ if(!pieces.length)return;let largest=1;for(const g of groups)largest=Math.max(largest,g.members.length);
+ progressText.textContent=`${largest.toLocaleString()} / ${mode.toLocaleString()}`;progressFill.style.width=`${largest/mode*100}%`;comboEl.textContent='×'+combo;
+}
+let toastKill=0;
+function showToast(t){toastEl.textContent=t;toastEl.classList.add('on');clearTimeout(toastKill);toastKill=setTimeout(()=>toastEl.classList.remove('on'),1000)}
+function playClink(streak=1){if(!soundEnabled)return;try{audioCtx??=new AudioContext();if(audioCtx.state==='suspended')audioCtx.resume();const t=audioCtx.currentTime;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(740+Math.min(streak,14)*32,t);o.frequency.exponentialRampToValueAtTime(440+streak*10,t+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.055,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+.31);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+.32);const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();o2.type='triangle';o2.frequency.value=1450+Math.min(streak,12)*43;g2.gain.setValueAtTime(.018,t);g2.gain.exponentialRampToValueAtTime(.0001,t+.11);o2.connect(g2);g2.connect(audioCtx.destination);o2.start(t);o2.stop(t+.12)}catch{}}
+function playTurn(){if(!soundEnabled)return;try{audioCtx??=new AudioContext();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(360,t);o.frequency.exponentialRampToValueAtTime(220,t+.07);g.gain.setValueAtTime(.018,t);g.gain.exponentialRampToValueAtTime(.0001,t+.09);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+.1)}catch{}}
+const particles=[];
+function spawnSnap(x,z,count){
+ for(let i=0;i<count;i++){const mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(rndRange(.045,.105),0),new THREE.MeshBasicMaterial({color:['#f3c76d','#fff0c8','#ff786d','#91dec1'][Math.floor(Math.random()*4)]}));mesh.position.set(x+rndRange(-.3,.3),.26+rndRange(0,.35),z+rndRange(-.3,.3));scene.add(mesh);particles.push({mesh,vx:rndRange(-1.7,1.7),vy:rndRange(1.1,3.5),vz:rndRange(-1.7,1.7),life:rndRange(.35,.8),max:.8})}
+}
+function winGame(){
+ isWon=true;isPlaying=false;elapsed=(performance.now()-clockStart)/1000;document.getElementById('winTime').textContent=fmtTime(elapsed);document.getElementById('winMode').textContent=mode.toLocaleString();document.getElementById('winCombo').textContent='×'+bestCombo;
+ for(const p of pieces)p.mesh.visible=false;
+ ceremony=new THREE.Group();scene.add(ceremony);ceremony.position.set(0,0,0);ceremony.scale.setScalar(.001);addVaseDecoration(ceremony);
+ cameraTarget.set(0,2.1,0);cameraRadius=17;cameraTheta=0;cameraPhi=.55;updateCamera();
+ flashEl.animate([{opacity:0},{opacity:.65,offset:.12},{opacity:0}],{duration:550,easing:'ease-out'});
+ for(let i=0;i<120;i++)spawnSnap(rndRange(-4,4),rndRange(-3,3),1);
+ playClink(15);showToast('A VASE. ACTUALLY A VASE.');
+ setTimeout(()=>{winScreen.style.display='grid';document.getElementById('winPanel').style.display='block'},900);
+}
+function animate(now){requestAnimationFrame(animate);const dt=Math.min(.04,(now-animClock)/1000||0);animClock=now;
+ if(isPlaying){elapsed=(now-clockStart)/1000;clockEl.textContent=fmtTime(elapsed)}
+ if(ceremony&&ceremony.scale.x<1){const s=Math.min(1,ceremony.scale.x+dt*1.6);ceremony.scale.setScalar(s);ceremony.rotation.y+=dt*.25}
+ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=6*dt;p.mesh.scale.setScalar(Math.max(.01,p.life/p.max));if(p.life<=0){scene.remove(p.mesh);p.mesh.geometry.dispose();p.mesh.material.dispose();particles.splice(i,1)}}
+ renderer.render(scene,camera);
+}
+
+for(const b of document.querySelectorAll('.mode'))b.addEventListener('click',()=>{document.querySelector('.mode.active')?.classList.remove('active');b.classList.add('active');mode=Number(b.dataset.n)});
+document.getElementById('play').addEventListener('click',()=>startPuzzle(mode));
+document.getElementById('again').addEventListener('click',()=>{winScreen.style.display='none';startPuzzle(mode)});
+document.getElementById('restart').addEventListener('click',()=>{if(!isPlaying&&!isWon){startScreen.style.display='grid';return}startScreen.style.display='grid';isPlaying=false;isWon=false;winScreen.style.display='none';document.querySelectorAll('.mode').forEach(b=>{b.classList.toggle('active',Number(b.dataset.n)===mode)});document.getElementById('play').textContent='RESTART THE PUZZLE'});
+document.getElementById('sound').addEventListener('click',e=>{soundEnabled=!soundEnabled;e.currentTarget.textContent=soundEnabled?'♫ SOUND ON':'♫ SOUND OFF'});
+try{buildScene()}catch(e){console.error(e);document.querySelector('#startScreen .fine').textContent='3D setup error: '+e.message}
 })();
 </script>
 </body>

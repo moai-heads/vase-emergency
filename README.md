@@ -1,11 +1,13 @@
-# Vase Emergency: Friendslop
+# Vase Emergency — Shardstorm
 
-A tiny local co-op browser game: pick up 1,000 shards and glue the vase back together without body-checking your friend.
+A 3D tabletop jigsaw for friends. Rebuild the vase from the actual number of scattered shards in the selected mode. No ghost image, target slots, or suggested pieces—use the broken edges and the glaze pattern. Join the shards anywhere on the table; connected clusters move together. The finished puzzle rolls itself back into a 3D vase.
 
 ## Play
-Open `index.html` in a browser, or use the GitHub Pages site.
+Open the [GitHub Pages game](https://moai-heads.github.io/vase-emergency/) or serve this folder over HTTP.
 
-- Player 1: WASD to move, hold **E** to scoop/glue.
-- Player 2: Arrow keys to move, hold **Enter** to scoop/glue.
+- Drag a shard or connected cluster with the left mouse button.
+- Press **Q / E** to rotate the selected shard or cluster by 90°.
+- Right-drag to orbit the 3D camera; use the wheel to zoom.
+- Choose 10, 50, 100, 200, 500, or 1,000 pieces.
 
-Collect rubble, carry up to 250 shards, then hold your action key by the central workbench to glue them in.
+The Three.js runtime is vendored locally, so gameplay does not depend on a third-party CDN.
